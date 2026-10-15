@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BestUp</title>
+    <!-- Fontes -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Estilo -->
+    <link rel="stylesheet" href="estilo.css">
+</head>
+<body class="tela-inicio">
+    <!-- =============================================
+        TELA DE INÍCIO — Laço + Título
+    ============================================= -->
+    <div class="caixa-laco">
+        <img src="laco-bestup.png" alt="Laço BestUp" class="laco-topo">
+    </div>
+    <h1 class="titulo-app">BestUp</h1>
+    <p class="subtitulo">Seu amigo virtual 💜 Sempre aqui com você</p>
+
+    <!-- =============================================
+        ABAS: Entrar / Cadastrar
+    ============================================= -->
+    <div class="navegacao-formularios" id="bloco-aba-acesso">
+        <button id="botao-entrar" class="botao-abas ativo" onclick="mostrarAba('entrar')">Entrar</button>
+        <button id="botao-cadastrar" class="botao-abas" onclick="mostrarAba('cadastrar')">Cadastrar</button>
+    </div>
+
+    <div class="caixa-formularios" id="bloco-form-acesso">
+        <!-- FORM — ENTRAR -->
+        <div id="form-entrar" class="conteudo-form">
+            <input type="email" id="login-email" class="campo" placeholder="E-mail">
+            <div class="grupo-senha">
+                <input type="password" id="login-senha" class="campo" placeholder="Senha">
+                <button type="button" class="icone-mostrar-senha" onclick="alternarSenha('login-senha')">👁️</button>
+            </div>
+            <a href="#" class="link-esqueci" onclick="mostrarRecuperar(); return false;">Esqueceu a senha?</a>
+            <label class="manter-conectado">
+                <input type="checkbox" id="manter-conectado"> Manter conectado
+            </label>
+            <button class="botao-principal-grande" onclick="fazerLogin()">Entrar</button>
+        </div>
+
+        <!-- FORM — CADASTRAR -->
+        <div id="form-cadastrar" class="conteudo-form escondido">
+            <input type="text" id="cad-nome" class="campo" placeholder="Nome da criança">
+            <input type="text" id="cad-responsavel-nome" class="campo" placeholder="Nome do responsável">
+            <input type="email" id="cad-responsavel-email" class="campo" placeholder="E-mail do responsável">
+            <input type="email" id="cad-email" class="campo" placeholder="E-mail da criança">
+            <input type="date" id="cad-data-nascimento" class="campo" placeholder="Data de nascimento">
+            <select id="cad-genero" class="campo">
+                <option value="">Gênero</option>
+                <option value="feminino">Feminino</option>
+                <option value="masculino">Masculino</option>
+                <option value="outro">Outro</option>
+            </select>
+            <div class="grupo-senha">
+                <input type="password" id="cad-senha" class="campo" placeholder="Senha">
+                <button type="button" class="icone-mostrar-senha" onclick="alternarSenha('cad-senha')">👁️</button>
+            </div>
+            <button class="botao-principal-grande" onclick="fazerCadastro()">Criar conta</button>
+        </div>
+
+        <!-- FORM — RECUPERAR SENHA -->
+        <div id="form-recuperar" class="conteudo-form escondido">
+            <h3>Recuperar senha</h3>
+            <p>Digite seu e-mail para receber um código:</p>
+            <input type="email" class="campo" placeholder="Seu e-mail">
+            <button class="botao-principal-grande" onclick="recuperarSenha()">Enviar código</button>
+            <button class="botao-secundario-limpo" onclick="voltarParaAcesso()">Voltar</button>
+        </div>
+    </div>
+
+    <!-- =============================================
+        TELA PRINCIPAL — Conversa
+    ============================================= -->
+    <div id="tela-principal" class="escondido">
+        <nav class="barra-navegacao">
+            <span class="logo-barra">BestUp 💜</span>
+            <div class="botoes-nav">
+                <button onclick="abrirCalendario()">📅 Calendário</button>
+                <button onclick="abrirKids()">🧸 Kids</button>
+                <button onclick="abrirConfiguracoes()">⚙️ Configurações</button>
+                <button class="ajuda-real" onclick="mostrarAjudaReal()">📞 Ajuda Real</button>
+            </div>
+        </nav>
+
+        <div class="container-chat">
+            <div id="caixa-conversa" class="caixa-conversa"></div>
+            
+            <div class="controles-voz">
+                <label>Voz:</label>
+                <select id="seletor-voz">
+                    <option value="feminina" selected>Feminina</option>
+                    <option value="masculina">Masculina</option>
+                </select>
+                <label>Velocidade:</label>
+                <select id="velocidade-voz">
+                    <option value="0.8">0.8x</option>
+                    <option value="1" selected>1x</option>
+                    <option value="1.5">1.5x</option>
+                    <option value="2">2x</option>
+                </select>
+            </div>
+
+            <div id="area-envio" class="area-envio bloqueada">
+                <input type="text" id="entrada-texto" placeholder="Escolha como está se sentindo primeiro…" disabled>
+                <button id="botao-microfone" onclick="alternarMicrofone()">🎤</button>
+                <button onclick="enviarMensagem()">➤</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- =============================================
+        TELA — CALENDÁRIO (ÚNICA VERSÃO ✅)
+    ============================================= -->
+    <div id="tela-calendario" class="escondido">
+        <div class="cabecalho">
+            <h2>📅 Calendário do Mês</h2>
+            <button class="nav-botao" onclick="voltarPrincipal()">← Voltar</button>
+        </div>
+        <div class="cartao-calendario">
+            <div class="navegacao-mes">
+                <button id="btn-mes-anterior" onclick="mesAnterior()">&lt;</button>
+                <span id="nome-mes-ano">Outubro / 2026</span>
+                <button id="btn-proximo-mes" onclick="proximoMes()">&gt;</button>
+            </div>
+            <div id="grade-calendario"></div>
+            <div id="resumo-mes"></div>
+        </div>
+    </div>
+
+    <!-- =============================================
+        TELA — ESPAÇO KIDS
+    ============================================= -->
+    <div id="tela-kids" class="escondido">
+        <div class="cabecalho">
+            <h2>🎨 Espaço Kids</h2>
+            <button class="nav-botao" onclick="voltarPrincipal()">← Voltar</button>
+        </div>
+        <div class="caixa-conversa">
+            <!-- MENU PRINCIPAL KIDS -->
+            <div id="menu-kids">
+                <div class="atividades">
+                    <div class="card-atividade" onclick="abrirAtividade('desenho')">
+                        <div class="icone-atividade">🖍️</div>
+                        <p>Desenho e Colorir</p>
+                    </div>
+                    <div class="card-atividade" onclick="abrirAtividade('emocoes')">
+                        <div class="icone-atividade">🎭</div>
+                        <p>Jogo das Emoções</p>
+                    </div>
+                    <div class="card-atividade" onclick="abrirAtividade('som')">
+                        <div class="icone-atividade">🔊</div>
+                        <p>Adivinhe o Som</p>
+                    </div>
+                    <div class="card-atividade" onclick="abrirAtividade('memoria')">
+                        <div class="icone-atividade">🧩</div>
+                        <p>Jogo da Memória</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ATIVIDADE — DESENHO E COLORIR -->
+            <div id="atividade-desenho" class="escondido">
+                <div class="cabecalho-atividade">
+                    <h3>🎨 Desenho e Colorir</h3>
+                    <button class="botao-voltar" onclick="voltarMenuKids()">← Voltar</button>
+                </div>
+                <div class="caixa-desenho">
+                    <canvas id="tela-desenho"></canvas>
+                </div>
+                <div class="controles-desenho">
+                    <div class="paleta-cores">
+                        <p class="titulo-paleta">Cores:</p>
+                        <div id="grade-cores"></div>
+                    </div>
+                    <div class="controle-tamanho">
+                        <label>Tamanho do pincel:</label>
+                        <input type="range" id="tamanho-pincel" min="2" max="30" value="8">
+                    </div>
+                    <div class="ferramentas">
+                        <button id="ferramenta-pincel" class="botao-ferramenta ativo" onclick="selecionarFerramenta('pincel')">✏️ Pincel</button>
+                        <button id="ferramenta-borracha" class="botao-ferramenta" onclick="selecionarFerramenta('borracha')">🧹 Borracha</button>
+                    </div>
+                    <div class="botoes-acao">
+                        <button class="botao-salvar" onclick="salvarDesenho()">💾 Salvar Desenho</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ATIVIDADE — EMOÇÕES -->
+            <div id="atividade-emocoes" class="escondido">
+                <div class="cabecalho-atividade">
+                    <h3>😊 Jogo das Emoções</h3>
+                    <button class="botao-voltar" onclick="voltarMenuKids()">← Voltar</button>
+                </div>
+                <div id="imagem-emocao" class="emocao-grande"></div>
+                <div id="botoes-emocao" class="grade-opcoes"></div>
+                <p id="feedback-emocao" class="feedback"></p>
+                <button id="botao-prox-emocao" class="escondido botao-proximo" onclick="proximaEmocao()">Próxima →</button>
+            </div>
+
+            <!-- ATIVIDADE — ADIVINHE O SOM -->
+            <div id="atividade-som" class="escondido">
+                <div class="cabecalho-atividade">
+                    <h3>🔊 Adivinhe o Som</h3>
+                    <button class="botao-voltar" onclick="voltarMenuKids()">← Voltar</button>
+                </div>
+                <button class="botao-ouvir" onclick="tocarSom()">🔊 Ouvir Som</button>
+                <p id="dica-som" class="dica"></p>
+                <div id="opcoes-som" class="grade-opcoes"></div>
+                <p id="feedback-som" class="feedback"></p>
+                <button id="botao-prox-som" class="escondido botao-proximo" onclick="proximoSom()">Próxima →</button>
+            </div>
+
+            <!-- ATIVIDADE — MEMÓRIA -->
+            <div id="atividade-memoria" class="escondido">
+                <div class="cabecalho-atividade">
+                    <h3>🃏 Jogo da Memória</h3>
+                    <button class="botao-voltar" onclick="voltarMenuKids()">← Voltar</button>
+                </div>
+                <p class="texto-centralizado">Pares encontrados: <span id="contador-pares">0</span>/6</p>
+                <div id="grade-memoria" class="tabuleiro-memoria"></div>
+                <div class="grupo-botoes-inferiores">
+                    <button class="botao-secundario" onclick="reiniciarMemoria()">🔄 Recomeçar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =============================================
+        TELA — CONFIGURAÇÕES
+    ============================================= -->
+    <div id="tela-config" class="escondido">
+        <div id="config-variacao" class="config-card"></div>
+    </div>
+
+    <!-- =============================================
+        PAINEL — ADMINISTRAÇÃO
+    ============================================= -->
+    <div id="tela-admin" class="escondido">
+        <div class="admin-header">
+            <h2>Painel de Administração</h2>
+            <button class="botao-principal-grande admin-voltar" onclick="voltarPrincipal()">Voltar</button>
+        </div>
+
+        <div class="admin-card">
+            <h3>Cadastrar usuário</h3>
+            <div class="admin-form-grid">
+                <input id="admin-nome" type="text" class="campo" placeholder="Nome do usuário">
+                <input id="admin-email" type="email" class="campo" placeholder="E-mail">
+                <input id="admin-idade" type="number" class="campo" min="1" max="120" placeholder="Idade">
+                <select id="admin-genero" class="campo">
+                    <option value="feminino">Feminino</option>
+                    <option value="masculino">Masculino</option>
+                    <option value="outro" selected>Outro</option>
+                </select>
+                <input id="admin-senha" type="password" class="campo" placeholder="Senha">
+            </div>
+            <button class="botao-principal-grande" onclick="cadastrarUsuarioAdmin()">Salvar usuário</button>
+        </div>
+
+        <div class="admin-card">
+            <h3>PIIs protegidas</h3>
+            <p class="admin-descricao">Cadastre dados sensíveis que a IA não deve processar, um por linha.</p>
+            <textarea id="admin-pii-input" class="campo textarea-admin" rows="6" placeholder="Ex.: nome completo&#10;CPF&#10;endereço&#10;telefone&#10;RG"></textarea>
+            <button class="botao-principal-grande" onclick="salvarPiiAdmin()">Salvar PIIs</button>
+            <div id="lista-pii-admin" class="lista-admin-status"></div>
+        </div>
+
+        <div class="admin-card">
+            <h3>Faixas de temas por idade</h3>
+            <div class="admin-form-grid">
+                <input id="admin-faixa-nome" type="text" class="campo" placeholder="Nome da faixa">
+                <input id="admin-faixa-tema" type="text" class="campo" placeholder="Tema">
+                <input id="admin-faixa-idade-min" type="number" class="campo" min="1" max="120" placeholder="Idade mínima">
+                <input id="admin-faixa-idade-max" type="number" class="campo" min="1" max="120" placeholder="Idade máxima">
+                <select id="admin-faixa-permitido" class="campo">
+                    <option value="1">Permitido</option>
+                    <option value="0">Proibido</option>
+                </select>
+                <textarea id="admin-faixa-motivo" class="campo textarea-admin" rows="3" placeholder="Motivo da regra para essa faixa etária"></textarea>
+            </div>
+            <button class="botao-principal-grande" onclick="salvarFaixaTemaAdmin()">Salvar faixa</button>
+            <div id="lista-faixas-admin" class="lista-admin-status"></div>
+        </div>
+
+        <div class="admin-card">
+            <h3>Alertas de temas proibidos</h3>
+            <div class="admin-form-grid">
+                <input id="admin-alerta-titulo" type="text" class="campo" placeholder="Título do alerta">
+                <input id="admin-alerta-idade-min" type="number" class="campo" min="1" max="120" placeholder="Idade mínima">
+                <input id="admin-alerta-idade-max" type="number" class="campo" min="1" max="120" placeholder="Idade máxima">
+                <textarea id="admin-alerta-descricao" class="campo textarea-admin" rows="3" placeholder="Descreva o tema proibido e o motivo"></textarea>
+            </div>
+            <button class="botao-principal-grande" onclick="salvarAlertaTemaAdmin()">Salvar alerta</button>
+            <div id="lista-alertas-admin" class="lista-admin-status"></div>
+        </div>
+
+        <div class="admin-card">
+            <h3>Alertas de conversa</h3>
+            <p class="admin-descricao">Acompanhe mensagens fora do padrão e revise o que precisa de atenção responsável.</p>
+            <div id="lista-alertas-sistema" class="lista-admin-status"></div>
+        </div>
+
+        <div class="admin-card">
+            <h3>Usuários do sistema</h3>
+            <div id="lista-usuarios-admin" class="lista-usuarios-admin"></div>
+        </div>
+    </div>
+
+    <!-- =============================================
+        MODAL — AJUDA REAL
+    ============================================= -->
+    <div id="modal-ajuda" class="modal escondido">
+        <div class="modal-conteudo">
+            <h3>📞 Ajuda Real</h3>
+            <p>Se precisar, você não está sozinho(a):</p>
+            <ul>
+                <li>📞 <strong>CVV — 188</strong> (apoio emocional)</li>
+                <li>🚔 <strong>Polícia — 190</strong></li>
+                <li>🚑 <strong>SAMU — 192</strong></li>
+                <li>⚖️ <strong>Direitos Humanos — 100</strong></li>
+            </ul>
+            <p class="mensagem-ajuda">Ligue se precisar 💜</p>
+            <button class="botao-principal-grande" onclick="fecharModalAjuda()">Entendi</button>
+        </div>
+    </div>
+
+    <!-- Script -->
+    <script src="script.js"></script>
+</body>
+</html>
