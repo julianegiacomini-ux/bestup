@@ -5,9 +5,24 @@ session_start();
 
 include "api_conexao.php";
 
-$entrada = json_decode(file_get_contents('php://input'), true);
-if (!is_array($entrada) || empty($entrada)) {
-    $entrada = $_POST;
+garantirUsuarioAdminPadrao($conn);
+
+$rawBody = file_get_contents('php://input');
+$entrada = is_array($_POST) ? $_POST : [];
+
+if (is_string($rawBody) && trim($rawBody) !== '') {
+    $rawBody = preg_replace('/^\xEF\xBB\xBF/', '', $rawBody);
+    $rawBody = trim($rawBody);
+    $jsonDados = json_decode($rawBody, true);
+
+    if (is_array($jsonDados) && !empty($jsonDados)) {
+        $entrada = $jsonDados;
+    } else {
+        parse_str($rawBody, $dadosParseados);
+        if (is_array($dadosParseados) && !empty($dadosParseados)) {
+            $entrada = $dadosParseados;
+        }
+    }
 }
 
 $email = trim((string) ($entrada["email"] ?? $_POST["email"] ?? ""));

@@ -147,19 +147,27 @@
                 <div class="atividades">
                     <div class="card-atividade" onclick="abrirAtividade('desenho')">
                         <div class="icone-atividade">🖍️</div>
-                        <p>Desenho e Colorir</p>
+                        <p>Desenho</p>
                     </div>
                     <div class="card-atividade" onclick="abrirAtividade('emocoes')">
                         <div class="icone-atividade">🎭</div>
-                        <p>Jogo das Emoções</p>
+                        <p>Emoções</p>
                     </div>
                     <div class="card-atividade" onclick="abrirAtividade('som')">
                         <div class="icone-atividade">🔊</div>
-                        <p>Adivinhe o Som</p>
+                        <p>Som</p>
                     </div>
                     <div class="card-atividade" onclick="abrirAtividade('memoria')">
                         <div class="icone-atividade">🧩</div>
-                        <p>Jogo da Memória</p>
+                        <p>Memória</p>
+                    </div>
+                    <div class="card-atividade" onclick="abrirAtividade('rosto')">
+                        <div class="icone-atividade">😊</div>
+                        <p>Rosto</p>
+                    </div>
+                    <div class="card-atividade" onclick="abrirAtividade('animais')">
+                        <div class="icone-atividade">🐼</div>
+                        <p>Animais</p>
                     </div>
                 </div>
             </div>
@@ -223,10 +231,81 @@
                     <h3>🃏 Jogo da Memória</h3>
                     <button class="botao-voltar" onclick="voltarMenuKids()">← Voltar</button>
                 </div>
-                <p class="texto-centralizado">Pares encontrados: <span id="contador-pares">0</span>/6</p>
+                <div class="titulo-tema-memoria">
+                    <span id="nome-tema-memoria">Animais</span>
+                </div>
+                <div class="contador-memoria"><span id="contador-pares">0</span></div>
                 <div id="grade-memoria" class="tabuleiro-memoria"></div>
                 <div class="grupo-botoes-inferiores">
                     <button class="botao-secundario" onclick="reiniciarMemoria()">🔄 Recomeçar</button>
+                </div>
+            </div>
+
+            <!-- ATIVIDADE — MONTAR PERSONAGEM -->
+            <div id="atividade-rosto" class="escondido">
+                <div class="cabecalho-atividade">
+                    <h3>👩 Montar personagem</h3>
+                    <button class="botao-voltar" onclick="voltarMenuKids()">← Voltar</button>
+                </div>
+                <div class="jogo-rosto">
+                    <div class="seletor-genero">
+                        <button class="botao-genero ativo" data-genero="feminino">👩 Feminino</button>
+                        <button class="botao-genero" data-genero="masculino">👨 Masculino</button>
+                    </div>
+
+                    <div class="avatar-builder avatar-genero-feminino">
+                        <div class="personagem-avatar">
+                            <div class="cabelo-personagem cabelo-longo cabelo-escuro"></div>
+                            <div class="face-personagem"></div>
+                            <div class="olhos-personagem">
+                                <span class="olho olho-esq"></span>
+                                <span class="olho olho-dir"></span>
+                            </div>
+                            <div class="boca-personagem"></div>
+                            <div class="roupa-personagem roupa-blusa"></div>
+                            <div class="calca-personagem calca-azul"></div>
+                            <div class="sapato-personagem sapato-branco"></div>
+                        </div>
+                    </div>
+
+                    <div id="opcoes-personagem" class="opcoes-personagem"></div>
+
+                    <div class="resultado-rosto">
+                        <span>Seu personagem:</span>
+                        <strong id="percentual-rosto">0%</strong>
+                    </div>
+                    <button id="botao-verificar-rosto" class="botao-proximo" onclick="verificarMontagemRosto()">Ver resultado</button>
+                    <button id="botao-prox-rosto" class="botao-proximo escondido" onclick="proximaRosto()">Próxima →</button>
+                    <p id="feedback-rosto" class="feedback-jogo"></p>
+                </div>
+            </div>
+
+            <!-- ATIVIDADE — ANIMAIS -->
+            <div id="atividade-animais" class="escondido">
+                <div class="cabecalho-atividade">
+                    <h3>🐼 Jogo dos Animais</h3>
+                    <button class="botao-voltar" onclick="voltarMenuKids()">← Voltar</button>
+                </div>
+                <div class="jogo-animais">
+                    <div id="imagem-animal" class="imagem-animal-grande">🐼</div>
+                    <div id="opcoes-animais" class="opcoes-animal"></div>
+                    <p id="feedback-animal" class="feedback-jogo"></p>
+                    <button id="botao-prox-animal" class="botao-proximo escondido" onclick="proximoAnimal()">Próxima →</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="modal-vitoria-memoria" class="modal-vitoria escondido">
+            <div class="modal-vitoria-card">
+                <div class="modal-vitoria-ribbon">COMPLETE</div>
+                <div class="modal-vitoria-conteudo">
+                    <h3>LEVEL 1</h3>
+                    <div class="estrelas">⭐ ⭐ ⭐</div>
+                    <div class="linha-pontuacao">
+                        <span>YOUR SCORE</span>
+                        <strong>9000</strong>
+                    </div>
+                    <button class="botao-vitoria-ok" onclick="fecharModalVitoriaMemoria()">OK</button>
                 </div>
             </div>
         </div>

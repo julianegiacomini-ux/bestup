@@ -803,14 +803,17 @@ function carregarDadosAdminLocais() {
         alertasSistema.innerHTML = alertasGerados.length ? alertasGerados.map(item => {
             const status = (item.status || 'pendente').toLowerCase();
             const statusTexto = status === 'lida' ? 'Lida' : status === 'resolvida' ? 'Resolvida' : 'Pendente';
+            const statusClasse = status === 'lida' ? 'lida' : status === 'resolvida' ? 'resolvida' : 'pendente';
             const botaoLida = status === 'pendente' ? `<button class="botao-admin botao-aprovar" onclick="marcarAlertaConversa(${item.id}, 'lida')">Marcar como lida</button>` : '';
             const botaoResolvida = status !== 'resolvida' ? `<button class="botao-admin botao-rejeitar" onclick="marcarAlertaConversa(${item.id}, 'resolvida')">Resolver</button>` : '';
 
             return `
-                <div class="item-admin">
-                    <strong>${item.usuario}</strong>
+                <div class="item-admin alert-${statusClasse}">
+                    <div class="item-admin-topo">
+                        <strong>${item.usuario}</strong>
+                        <span class="status-badge ${statusClasse}">${statusTexto}</span>
+                    </div>
                     <span>${new Date(item.horario).toLocaleString('pt-BR')}</span>
-                    <small>Status: ${statusTexto}</small>
                     <small>${Array.isArray(item.motivos) ? item.motivos.join(', ') : (item.motivos || '')}</small>
                     <small>Mensagem: "${item.texto || 'Sem texto'}"</small>
                     <div class="acoes-admin">
@@ -961,6 +964,7 @@ async function carregarPainelAdmin() {
         lista.innerHTML = dados.usuarios.map(usuario => {
             const status = usuario.status || 'pendente';
             const statusTexto = status === 'aprovado' ? 'Aprovado' : status === 'rejeitado' ? 'Rejeitado' : 'Pendente';
+            const statusClasse = status === 'aprovado' ? 'aprovado' : status === 'rejeitado' ? 'rejeitado' : 'pendente';
             const botaoAprovar = status === 'pendente'
                 ? `<button class="botao-admin botao-aprovar" onclick="aprovarUsuario(${usuario.id})">Aprovar</button>`
                 : '';
@@ -973,11 +977,14 @@ async function carregarPainelAdmin() {
                     <div>
                         <strong>${usuario.nome}</strong><br>
                         <span>${usuario.email}</span><br>
-                        <small>Idade: ${usuario.idade || '-'} | Gênero: ${usuario.genero || '-'} | Status: <b>${statusTexto}</b></small>
+                        <small>Idade: ${usuario.idade || '-'} | Gênero: ${usuario.genero || '-'} </small>
                     </div>
-                    <div class="acoes-admin">
-                        ${botaoAprovar}
-                        ${botaoRejeitar}
+                    <div class="usuario-admin-status-group">
+                        <span class="status-badge ${statusClasse}">${statusTexto}</span>
+                        <div class="acoes-admin">
+                            ${botaoAprovar}
+                            ${botaoRejeitar}
+                        </div>
                     </div>
                 </div>
             `;
@@ -1072,85 +1079,131 @@ async function cadastrarUsuarioAdmin() {
 // =============================================
 // CALENDÁRIO
 // =============================================
+let mesCalendarioAtual = new Date();
+
+function atualizarCabecalhoCalendario() {
+    const nomeMesAno = document.getElementById("nome-mes-ano");
+    if (!nomeMesAno) return;
+    const nomesMes = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+    nomeMesAno.textContent = `${nomesMes[mesCalendarioAtual.getMonth()]} / ${mesCalendarioAtual.getFullYear()}`;
+}
+
+function mesAnterior() {
+    mesCalendarioAtual = new Date(mesCalendarioAtual.getFullYear(), mesCalendarioAtual.getMonth() - 1, 1);
+    montarCalendario();
+}
+
+function proximoMes() {
+    mesCalendarioAtual = new Date(mesCalendarioAtual.getFullYear(), mesCalendarioAtual.getMonth() + 1, 1);
+    montarCalendario();
+}
+
 function abrirCalendario() {
     document.getElementById("tela-principal")?.classList.add("escondido");
     document.getElementById("tela-calendario")?.classList.remove("escondido");
+    mesCalendarioAtual = new Date();
+    atualizarCabecalhoCalendario();
     montarCalendario();
 }
+
 function montarCalendario() {
     if (!usuarioLogado) return;
-    const agora = new Date();
-    const mes = agora.getMonth();
-    const ano = agora.getFullYear();
+    const mes = mesCalendarioAtual.getMonth();
+    const ano = mesCalendarioAtual.getFullYear();
     const primeiroDia = new Date(ano, mes, 1);
     const ultimoDia = new Date(ano, mes + 1, 0);
     const registros = JSON.parse(localStorage.getItem(`humor_${usuarioLogado.id}`) || "{}");
     const conversas = JSON.parse(localStorage.getItem(`conversas_${usuarioLogado.id}`) || "{}");
-    
+
+    atualizarCabecalhoCalendario();
+
     const nomesMes = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
     const diasSemana = ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
-    
-    let html = `<h3 style="text-align:center; color:#56070C; margin-bottom:15px;">${nomesMes[mes]} de ${ano}</h3>`;
-    html += `<div style="display:grid; grid-template-columns:repeat(7,1fr); gap:8px; text-align:center;">`;
-    diasSemana.forEach(d => html += `<div style="font-weight:bold; color:#56070C; padding:5px;">${d}</div>`);
-    
-    for (let i = 0; i < primeiroDia.getDay(); i++) html += `<div></div>`;
-    for (let d = 1; d <= ultimoDia.getDate(); d++) {
-        const dataObj = new Date(ano, mes, d);
-        const chave = dataISO(dataObj);
-        const humor = registros[chave];
-        const temConversa = conversas[chave] && conversas[chave].length > 0;
-        const hoje = new Date();
-        const ehHoje = d === hoje.getDate() && mes === hoje.getMonth() && ano === hoje.getFullYear();
-        
-        html += `
-            <div onclick="abrirDia('${chave}', ${d})" 
-                 style="padding:10px 5px; border-radius:10px; cursor:pointer; background:${humor ? corHumor[humor] : '#eee'}; ${ehHoje ? 'border:2px solid #56070C; font-weight:bold;' : ''}">
-                ${d} ${temConversa ? '<br><span style="font-size:9px;">💬</span>' : ''}
-            </div>`;
-    }
-    html += `</div>`;
-    
+
     const contagem = { muito_bom:0, bom:0, mais_ou_menos:0, ruim:0, muito_ruim:0 };
     Object.values(registros).forEach(h => { if (contagem[h] !== undefined) contagem[h]++; });
-    
-    html += `
-        <div style="margin-top:20px; padding:15px; background:rgba(86,7,12,0.05); border-radius:12px;">
-            <h4 style="color:#56070C; margin-bottom:10px;">📊 Resumo do Mês</h4>
-            <p>🟢 Muito bom: ${contagem.muito_bom} dias</p>
-            <p>🟡 Bom: ${contagem.bom} dias</p>
-            <p>🟠 Mais ou menos: ${contagem.mais_ou_menos} dias</p>
-            <p>🔵 Ruim: ${contagem.ruim} dias</p>
-            <p>🟣 Muito ruim: ${contagem.muito_ruim} dias</p>
-        </div>`;
-    
+
+    let html = `
+        <div class="calendario-card">
+            <div class="calendario-bow">🎀</div>
+            <div class="calendario-mes-titulo">
+                ${nomesMes[mes]}
+                <span class="calendario-ano">${ano}</span>
+            </div>
+            <div class="grade-calendario">
+                ${diasSemana.map(d => `<div class="dia-semana">${d}</div>`).join('')}
+                ${Array.from({ length: primeiroDia.getDay() }, () => '<div class="dia-calendario vazio"></div>').join('')}
+                ${Array.from({ length: ultimoDia.getDate() }, (_, index) => {
+                    const d = index + 1;
+                    const dataObj = new Date(ano, mes, d);
+                    const chave = dataISO(dataObj);
+                    const humor = registros[chave];
+                    const temConversa = conversas[chave] && conversas[chave].length > 0;
+                    const hoje = new Date();
+                    const ehHoje = d === hoje.getDate() && mes === hoje.getMonth() && ano === hoje.getFullYear();
+                    const fundo = humor ? corHumor[humor] : 'rgba(255,255,255,0.2)';
+                    const destaque = ehHoje ? 'selecionado' : '';
+                    return `
+                        <div class="dia-calendario ${destaque}" onclick="abrirDia('${chave}', ${d})" style="background:${fundo};">
+                            <span class="numero-dia">${d}</span>
+                            ${temConversa ? '<span style="font-size:10px;">💬</span>' : '<span style="font-size:10px; opacity:0;">.</span>'}
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        </div>
+    `;
+
+    const resumoHtml = `
+        <div class="resumo-mes">
+            <h3>Resumo do Mês</h3>
+            <div class="resumo-grid">
+                <div class="item-resumo"><span class="ponto-humor ponto-muito-bom"></span><strong>Muito bom:</strong> ${contagem.muito_bom} dias</div>
+                <div class="item-resumo"><span class="ponto-humor ponto-bom"></span><strong>Bom:</strong> ${contagem.bom} dias</div>
+                <div class="item-resumo"><span class="ponto-humor ponto-mais-ou-menos"></span><strong>Mais ou menos:</strong> ${contagem.mais_ou_menos} dias</div>
+                <div class="item-resumo"><span class="ponto-humor ponto-ruim"></span><strong>Ruim:</strong> ${contagem.ruim} dias</div>
+                <div class="item-resumo"><span class="ponto-humor ponto-muito-ruim"></span><strong>Muito ruim:</strong> ${contagem.muito_ruim} dias</div>
+            </div>
+        </div>
+    `;
+
     document.getElementById("grade-calendario").innerHTML = html;
+    document.getElementById("resumo-mes").innerHTML = resumoHtml;
 }
+
 function abrirDia(chaveData, numeroDia) {
     if (!usuarioLogado) return;
     const registros = JSON.parse(localStorage.getItem(`humor_${usuarioLogado.id}`) || "{}");
     const conversas = JSON.parse(localStorage.getItem(`conversas_${usuarioLogado.id}`) || "{}");
     const humor = registros[chaveData];
     const msgs = conversas[chaveData] || [];
-    
-    let html = `<h4 style="color:#56070C; margin-bottom:10px;">📅 Dia ${numeroDia}</h4>`;
+
+    let html = `
+        <div class="detalle-dia">
+            <h4>📅 Dia ${numeroDia}</h4>
+    `;
+
     if (humor) {
-        html += `<p style="background:${corHumor[humor]}; padding:8px 12px; border-radius:8px; display:inline-block; margin-bottom:15px;">${nomeHumor[humor]}</p>`;
-    } else { 
-        html += `<p style="color:#999; margin-bottom:15px;">Nenhum humor registrado neste dia.</p>`; 
+        html += `<span class="humor-dia" style="background:${corHumor[humor]};">${nomeHumor[humor]}</span>`;
+    } else {
+        html += `<p style="color:#999; margin:0 0 12px;">Nenhum humor registrado neste dia.</p>`;
     }
-    
+
     if (msgs.length > 0) {
-        html += `<h5 style="margin:15px 0 8px;">💬 Conversa do dia:</h5>`;
+        html += `<h5 style="margin:15px 0 8px; color:#56070C;">💬 Conversa do dia</h5><div class="lista-conversas">`;
         msgs.forEach(m => {
             html += `
-                <div style="margin:5px 0; padding:8px 12px; border-radius:10px; background:${m.tipo === 'amigo' ? '#BCE5FF' : '#56070C'}; color:${m.tipo === 'amigo' ? '#2C3E50' : 'white'}; max-width:85%; ${m.tipo === 'usuario' ? 'margin-left:auto;' : ''}">
-                    <small style="opacity:0.7;">${m.hora}</small><br>${m.texto}
+                <div class="balao-conversa ${m.tipo === 'amigo' ? 'amigo' : 'usuario'}">
+                    <small>${m.hora}</small>
+                    ${m.texto}
                 </div>`;
         });
-    } else { html += `<p style="color:#999;">Sem conversas registradas.</p>`; }
-    
-    html += `<button onclick="montarCalendario()" style="margin-top:15px; padding:8px 16px; background:#56070C; color:white; border:none; border-radius:8px; cursor:pointer;">← Voltar ao calendário</button>`;
+        html += `</div>`;
+    } else {
+        html += `<p style="color:#999; margin:10px 0 0;">Sem conversas registradas.</p>`;
+    }
+
+    html += `<button class="botao-voltar-calendario" onclick="montarCalendario()">← Voltar ao calendário</button></div>`;
     document.getElementById("grade-calendario").innerHTML = html;
 }
 
@@ -1176,6 +1229,8 @@ function abrirAtividade(nome) {
     if (nome === "emocoes") iniciarEmocoes();
     if (nome === "som") iniciarSons();
     if (nome === "memoria") iniciarMemoria();
+    if (nome === "rosto") iniciarRosto();
+    if (nome === "animais") iniciarAnimais();
 }
 
 // === DESENHO E COLORIR ===
@@ -1395,37 +1450,281 @@ function verificarSom(escolha) {
 }
 function proximoSom() { indiceSom = (indiceSom + 1) % listaSons.length; carregarSom(); }
 
-// === JOGO DA MEMÓRIA — FUNCIONANDO ✅ ===
+// === MONTAR PERSONAGEM ===
+let generoAtual = "feminino";
+let avatarSelecionado = {
+    cabelo: "cabelo-longo",
+    roupa: "roupa-blusa",
+    calca: "calca-azul",
+    sapato: "sapato-branco"
+};
+const perfilIdeal = {
+    feminino: {
+        cabelo: "cabelo-longo",
+        roupa: "roupa-blusa",
+        calca: "calca-azul",
+        sapato: "sapato-branco"
+    },
+    masculino: {
+        cabelo: "cabelo-curto",
+        roupa: "roupa-camiseta",
+        calca: "calca-verde",
+        sapato: "sapato-azul"
+    }
+};
+const opcoesPersonagem = {
+    feminino: {
+        cabelo: [
+            { nome: "Longo", valor: "cabelo-longo" },
+            { nome: "Curto", valor: "cabelo-curto" }
+        ],
+        roupa: [
+            { nome: "Blusa clara", valor: "roupa-blusa" },
+            { nome: "Camiseta", valor: "roupa-camiseta" }
+        ],
+        calca: [
+            { nome: "Calça azul", valor: "calca-azul" },
+            { nome: "Calça verde", valor: "calca-verde" }
+        ],
+        sapato: [
+            { nome: "Tênis branco", valor: "sapato-branco" },
+            { nome: "Tênis azul", valor: "sapato-azul" }
+        ]
+    },
+    masculino: {
+        cabelo: [
+            { nome: "Curto", valor: "cabelo-curto" },
+            { nome: "Longo", valor: "cabelo-longo" }
+        ],
+        roupa: [
+            { nome: "Camiseta", valor: "roupa-camiseta" },
+            { nome: "Blusa", valor: "roupa-blusa" }
+        ],
+        calca: [
+            { nome: "Short verde", valor: "calca-verde" },
+            { nome: "Calça azul", valor: "calca-azul" }
+        ],
+        sapato: [
+            { nome: "Tênis azul", valor: "sapato-azul" },
+            { nome: "Tênis branco", valor: "sapato-branco" }
+        ]
+    }
+};
+
+function iniciarRosto() {
+    generoAtual = "feminino";
+    avatarSelecionado = { ...perfilIdeal.feminino };
+    atualizarGeneroAvatar();
+    renderizarOpcoesPersonagem();
+    atualizarPercentualRosto();
+    document.getElementById("feedback-rosto").textContent = "Escolha o gênero e monte o personagem com as opções abaixo.";
+    document.getElementById("feedback-rosto").className = "feedback-jogo";
+    document.getElementById("botao-prox-rosto")?.classList.add("escondido");
+    document.getElementById("botao-verificar-rosto")?.classList.remove("escondido");
+}
+
+function atualizarGeneroAvatar() {
+    const avatar = document.querySelector(".avatar-builder");
+    if (!avatar) return;
+    avatar.classList.remove("avatar-genero-feminino", "avatar-genero-masculino");
+    avatar.classList.add(`avatar-genero-${generoAtual}`);
+
+    const cabelo = document.querySelector(".cabelo-personagem");
+    const roupa = document.querySelector(".roupa-personagem");
+    const calca = document.querySelector(".calca-personagem");
+    const sapato = document.querySelector(".sapato-personagem");
+
+    if (cabelo) {
+        cabelo.className = `cabelo-personagem ${avatarSelecionado.cabelo} ${generoAtual === "feminino" ? "cabelo-escuro" : "cabelo-marron"}`;
+    }
+    if (roupa) roupa.className = `roupa-personagem ${avatarSelecionado.roupa}`;
+    if (calca) calca.className = `calca-personagem ${avatarSelecionado.calca}`;
+    if (sapato) sapato.className = `sapato-personagem ${avatarSelecionado.sapato}`;
+}
+
+function renderizarOpcoesPersonagem() {
+    const container = document.getElementById("opcoes-personagem");
+    if (!container) return;
+    container.innerHTML = "";
+
+    Object.entries(opcoesPersonagem[generoAtual]).forEach(([categoria, opcoes]) => {
+        const bloco = document.createElement("div");
+        bloco.className = "grupo-opcao-personagem";
+
+        const titulo = document.createElement("span");
+        titulo.className = "titulo-opcao-personagem";
+        titulo.textContent = categoria === "cabelo" ? "Cabelo" : categoria === "roupa" ? "Roupa" : categoria === "calca" ? "Calça" : "Sapato";
+        bloco.appendChild(titulo);
+
+        const lista = document.createElement("div");
+        lista.className = "lista-opcoes-personagem";
+
+        opcoes.forEach(opcao => {
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = `botao-selecao ${avatarSelecionado[categoria] === opcao.valor ? "ativo" : ""}`;
+            btn.textContent = opcao.nome;
+            btn.onclick = () => {
+                avatarSelecionado[categoria] = opcao.valor;
+                atualizarGeneroAvatar();
+                renderizarOpcoesPersonagem();
+                atualizarPercentualRosto();
+            };
+            lista.appendChild(btn);
+        });
+
+        bloco.appendChild(lista);
+        container.appendChild(bloco);
+    });
+}
+
+function atualizarPercentualRosto() {
+    const total = Object.keys(perfilIdeal[generoAtual]).length;
+    let acertos = 0;
+    Object.entries(perfilIdeal[generoAtual]).forEach(([categoria, valorIdeal]) => {
+        if (avatarSelecionado[categoria] === valorIdeal) acertos++;
+    });
+    const percentual = Math.round((acertos / total) * 100);
+    const el = document.getElementById("percentual-rosto");
+    if (el) el.textContent = `${percentual}%`;
+}
+
+function verificarMontagemRosto() {
+    const total = Object.keys(perfilIdeal[generoAtual]).length;
+    let acertos = 0;
+    Object.entries(perfilIdeal[generoAtual]).forEach(([categoria, valorIdeal]) => {
+        if (avatarSelecionado[categoria] === valorIdeal) acertos++;
+    });
+    const percentual = Math.round((acertos / total) * 100);
+    const elFeed = document.getElementById("feedback-rosto");
+    const elVer = document.getElementById("botao-verificar-rosto");
+    const elProx = document.getElementById("botao-prox-rosto");
+
+    if (elFeed) {
+        elFeed.textContent = `Você montou ${percentual}% do personagem!`;
+        elFeed.className = percentual >= 75 ? "feedback-jogo feedback-certo" : "feedback-jogo feedback-errado";
+    }
+    if (elVer) elVer.classList.add("escondido");
+    if (elProx) elProx.classList.remove("escondido");
+    const elPercentual = document.getElementById("percentual-rosto");
+    if (elPercentual) elPercentual.textContent = `${percentual}%`;
+}
+
+function proximaRosto() {
+    generoAtual = generoAtual === "feminino" ? "masculino" : "feminino";
+    avatarSelecionado = { ...perfilIdeal[generoAtual] };
+    document.getElementById("botao-verificar-rosto")?.classList.remove("escondido");
+    document.getElementById("botao-prox-rosto")?.classList.add("escondido");
+    atualizarGeneroAvatar();
+    renderizarOpcoesPersonagem();
+    atualizarPercentualRosto();
+    document.getElementById("feedback-rosto").textContent = "Agora escolha as peças para o personagem e veja o resultado.";
+    document.getElementById("feedback-rosto").className = "feedback-jogo";
+}
+
+const botoesGenero = document.querySelectorAll(".botao-genero");
+botoesGenero.forEach(btn => {
+    btn.onclick = () => {
+        generoAtual = btn.dataset.genero;
+        avatarSelecionado = { ...perfilIdeal[generoAtual] };
+        document.querySelectorAll(".botao-genero").forEach(b => b.classList.toggle("ativo", b === btn));
+        atualizarGeneroAvatar();
+        renderizarOpcoesPersonagem();
+        atualizarPercentualRosto();
+    };
+});
+
+// === JOGO DOS ANIMAIS ===
+let indiceAnimal = 0;
+let animalAcertou = false;
+const listaAnimais = [
+    { nome: "Leão", emoji: "🦁", dica: "É o rei da selva!" },
+    { nome: "Elefante", emoji: "🐘", dica: "Tem o maior tronco do mundo!" },
+    { nome: "Girafa", emoji: "🦒", dica: "Tem pescoço muito alto!" },
+    { nome: "Tigre", emoji: "🐯", dica: "Tem listras bonitas!" }
+];
+function iniciarAnimais() {
+    indiceAnimal = 0; animalAcertou = false;
+    carregarAnimal();
+}
+function carregarAnimal() {
+    const atual = listaAnimais[indiceAnimal];
+    const elImagem = document.getElementById("imagem-animal");
+    const elFeed = document.getElementById("feedback-animal");
+    const elProx = document.getElementById("botao-prox-animal");
+    const elOpcoes = document.getElementById("opcoes-animais");
+
+    if (elImagem) elImagem.textContent = atual.emoji;
+    if (elFeed) { elFeed.textContent = "Qual animal é esse?"; elFeed.className = "feedback-jogo"; }
+    if (elProx) elProx.classList.add("escondido");
+    animalAcertou = false;
+
+    if (elOpcoes) {
+        elOpcoes.innerHTML = "";
+        const opcoes = [...listaAnimais.map(item => item.nome)].sort(() => Math.random() - 0.5);
+        opcoes.forEach(op => {
+            const btn = document.createElement("button");
+            btn.className = "botao-animal";
+            btn.textContent = op;
+            btn.onclick = () => verificarAnimal(op);
+            elOpcoes.appendChild(btn);
+        });
+    }
+}
+function verificarAnimal(escolha) {
+    if (animalAcertou) return;
+    const certo = listaAnimais[indiceAnimal].nome;
+    const elFeed = document.getElementById("feedback-animal");
+    const elProx = document.getElementById("botao-prox-animal");
+
+    if (escolha === certo) {
+        if (elFeed) { elFeed.textContent = "✅ Correto! " + listaAnimais[indiceAnimal].dica; elFeed.className = "feedback-jogo feedback-certo"; }
+        animalAcertou = true; elProx?.classList.remove("escondido");
+    } else {
+        if (elFeed) { elFeed.textContent = "💜 Quase! Tente outra vez."; elFeed.className = "feedback-jogo feedback-errado"; }
+    }
+}
+function proximoAnimal() {
+    indiceAnimal = (indiceAnimal + 1) % listaAnimais.length;
+    carregarAnimal();
+}
+
+// === JOGO DA MEMÓRIA — TEMAS INFANTIS E RODADAS DINÂMICAS ✅ ===
 const temasMemoria = [
-    { nome: "Animais", icones: ["🐶","🐱","🐰","🐻","🦊","🐼"] },
-    { nome: "Frutas", icones: ["🍎","🍌","🍇","🍓","🍊","🍑"] },
-    { nome: "Flores", icones: ["🌸","🌻","🌷","🌹","💐","🌺"] },
-    { nome: "Céu", icones: ["⭐","🌙","☀️","🌈","☁️","✨"] },
-    { nome: "Corações", icones: ["❤️","💜","💙","💚","🧡","🖤"] }
+    { nome: "Animais", fundo: "#6e7dfc", borda: "#fbd38d", card: "#f5ebff", icones: ["🐶","🐱","🐰","🐻","🦊","🐼","🐵","🐮"] },
+    { nome: "Doces", fundo: "#ff9ec9", borda: "#ffd46b", card: "#fff0f7", icones: ["🍩","🍦","🍰","🍪","🍭","🍓","🍬","🥨"] },
+    { nome: "Natureza", fundo: "#7ec9bb", borda: "#f7dc7d", card: "#ecfff7", icones: ["🌼","🌳","🌞","🌈","🦋","🍀","🌿","🌱"] },
+    { nome: "Espaço", fundo: "#5f7de9", borda: "#ffd166", card: "#edf2ff", icones: ["🚀","🌙","⭐","☄️","🪐","✨","🌍","👽"] },
+    { nome: "Diversão", fundo: "#ffb570", borda: "#ff7ba9", card: "#fff7df", icones: ["⚽","🎈","🎨","🎵","🎲","🎯","🏀","🎳"] }
 ];
 let temaAtualMem = -1;
 let cartasViradas = [];
 let paresEncontrados = 0;
 let bloqueadoMemoria = false;
+const totalParesMemoria = 8;
 
 function iniciarMemoria() {
     temaAtualMem = (temaAtualMem + 1) % temasMemoria.length;
     paresEncontrados = 0;
     cartasViradas = [];
     bloqueadoMemoria = false;
-    
+
     const tema = temasMemoria[temaAtualMem];
     const elNome = document.getElementById("nome-tema-memoria");
     const elCont = document.getElementById("contador-pares");
     const elGrade = document.getElementById("grade-memoria");
-    
+
     if (elNome) elNome.textContent = tema.nome;
-    if (elCont) elCont.textContent = `${paresEncontrados}/6`;
+    if (elCont) elCont.textContent = `${paresEncontrados}`;
     if (!elGrade) return;
-    
-    let cartas = [...tema.icones, ...tema.icones];
+
+    elGrade.style.setProperty("--tema-fundo", tema.fundo);
+    elGrade.style.setProperty("--tema-borda", tema.borda);
+    elGrade.style.setProperty("--tema-cartas", tema.card);
+
+    let cartas = [...tema.icones.slice(0, totalParesMemoria), ...tema.icones.slice(0, totalParesMemoria)];
     cartas.sort(() => Math.random() - 0.5);
-    
+
     elGrade.innerHTML = "";
     cartas.forEach((icone, indice) => {
         const carta = document.createElement("div");
@@ -1441,35 +1740,47 @@ function virarCartaMemoria(el) {
     if (bloqueadoMemoria) return;
     if (el.classList.contains("virada") || el.classList.contains("encontrada")) return;
     if (cartasViradas.length >= 2) return;
-    
+
     el.classList.add("virada");
     el.textContent = el.dataset.icone;
     cartasViradas.push(el);
-    
+
     if (cartasViradas.length === 2) {
         bloqueadoMemoria = true;
         verificarParMemoria();
     }
 }
 
+function mostrarModalVitoriaMemoria() {
+    const modal = document.getElementById("modal-vitoria-memoria");
+    if (!modal) return;
+    modal.classList.remove("escondido");
+}
+
+function fecharModalVitoriaMemoria() {
+    const modal = document.getElementById("modal-vitoria-memoria");
+    if (modal) modal.classList.add("escondido");
+    iniciarMemoria();
+}
+
 function verificarParMemoria() {
     const [carta1, carta2] = cartasViradas;
-    
+
     if (carta1.dataset.icone === carta2.dataset.icone) {
         setTimeout(() => {
             carta1.classList.add("encontrada");
             carta2.classList.add("encontrada");
             paresEncontrados++;
-            
+
             const elCont = document.getElementById("contador-pares");
-            if (elCont) elCont.textContent = `${paresEncontrados}/6`;
-            
-            if (paresEncontrados === 6) {
+            if (elCont) elCont.textContent = `${paresEncontrados}`;
+
+            if (paresEncontrados === totalParesMemoria) {
                 setTimeout(() => {
-                    alert("🎉 Parabéns! Você encontrou todos os pares! 💜");
-                }, 300);
+                    mostrarModalVitoriaMemoria();
+                }, 500);
             }
-            
+
             cartasViradas = [];
             bloqueadoMemoria = false;
         }, 600);
@@ -1486,7 +1797,7 @@ function verificarParMemoria() {
 }
 
 function reiniciarMemoria() {
-    temaAtualMem--;
+    temaAtualMem = -1;
     iniciarMemoria();
 }
 

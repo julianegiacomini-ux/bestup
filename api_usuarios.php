@@ -7,6 +7,8 @@ header('Access-Control-Allow-Headers: Content-Type');
 
 require_once 'api_conexao.php';
 
+garantirUsuarioAdminPadrao($conn);
+
 function garantirTabelasAdmin($conn) {
     $sqls = [
         "CREATE TABLE IF NOT EXISTS admin_pii (
@@ -61,22 +63,32 @@ function garantirTabelasAdmin($conn) {
 
 garantirTabelasAdmin($conn);
 
-$rawBody = file_get_contents('php://input');
-$dados = [];
+function normalizarDadosRequisicao() {
+    $dados = is_array($_POST) ? $_POST : [];
+    $rawBody = file_get_contents('php://input');
 
-if (!empty($rawBody)) {
-    $jsonDados = json_decode($rawBody, true);
-    if (is_array($jsonDados)) {
-        $dados = $jsonDados;
-    } else {
-        parse_str($rawBody, $dados);
+    if (is_string($rawBody) && trim($rawBody) !== '') {
+        $rawBody = preg_replace('/^\xEF\xBB\xBF/', '', $rawBody);
+        $rawBody = trim($rawBody);
+
+        if ($rawBody !== '') {
+            $jsonDados = json_decode($rawBody, true);
+            if (is_array($jsonDados) && !empty($jsonDados)) {
+                $dados = $jsonDados;
+            } else {
+                parse_str($rawBody, $dadosParseados);
+                if (is_array($dadosParseados) && !empty($dadosParseados)) {
+                    $dados = $dadosParseados;
+                }
+            }
+        }
     }
+
+    return is_array($dados) ? $dados : [];
 }
 
-if (!is_array($dados) || empty($dados)) {
-    $dados = $_POST;
-}
-$acao = $dados['acao'] ?? '';
+$dados = normalizarDadosRequisicao();
+$acao = (string) ($dados['acao'] ?? $dados['action'] ?? '');
 
 if ($acao === 'listar_admin_configuracoes') {
     $pii = [];
