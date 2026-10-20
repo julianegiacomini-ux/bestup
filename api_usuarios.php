@@ -72,13 +72,22 @@ function normalizarDadosRequisicao() {
         $rawBody = trim($rawBody);
 
         if ($rawBody !== '') {
-            $jsonDados = json_decode($rawBody, true);
-            if (is_array($jsonDados) && !empty($jsonDados)) {
-                $dados = $jsonDados;
+            $contentType = strtolower((string) ($_SERVER['CONTENT_TYPE'] ?? ''));
+
+            if (stripos($contentType, 'application/json') !== false) {
+                $jsonDados = json_decode($rawBody, true);
+                if (is_array($jsonDados) && !empty($jsonDados)) {
+                    $dados = array_merge($dados, $jsonDados);
+                }
             } else {
-                parse_str($rawBody, $dadosParseados);
-                if (is_array($dadosParseados) && !empty($dadosParseados)) {
-                    $dados = $dadosParseados;
+                $jsonDados = json_decode($rawBody, true);
+                if (is_array($jsonDados) && !empty($jsonDados)) {
+                    $dados = array_merge($dados, $jsonDados);
+                } else {
+                    parse_str($rawBody, $dadosParseados);
+                    if (is_array($dadosParseados) && !empty($dadosParseados)) {
+                        $dados = array_merge($dados, $dadosParseados);
+                    }
                 }
             }
         }

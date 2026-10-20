@@ -1,4 +1,44 @@
-const API_URL = window.location.origin + "/BestUp/";
+const API_URL = (() => {
+    const scriptUrl = document.currentScript && document.currentScript.src
+        ? new URL(document.currentScript.src, window.location.href).href
+        : "";
+
+    const scriptBase = scriptUrl ? new URL("./", scriptUrl).href : "";
+    const pathname = (window.location.pathname || "/").replace(/\/+$/, "") || "/";
+    const isProjectPath = pathname.toLowerCase().includes("/bestup");
+
+    const currentDir = (() => {
+        if (!pathname || pathname === "/") return window.location.origin + "/";
+        const url = new URL(pathname.endsWith("/") ? pathname : pathname + "/", window.location.href);
+        return url.href;
+    })();
+
+    const candidates = [
+        scriptBase,
+        isProjectPath ? window.location.origin + "/BestUp/" : currentDir,
+        window.location.origin + "/",
+        window.location.origin + "/BestUp/",
+        "./"
+    ];
+
+    for (const candidate of candidates) {
+        if (!candidate) continue;
+        const normalized = candidate.endsWith("/") ? candidate : candidate + "/";
+        const lower = normalized.toLowerCase();
+
+        if (isProjectPath && (lower.includes("/bestup/") || lower.includes("/bestup"))) {
+            return normalized;
+        }
+
+        if (!isProjectPath && lower === (window.location.origin + "/").toLowerCase()) {
+            return normalized;
+        }
+    }
+
+    if (scriptBase) return scriptBase;
+    return window.location.origin + "/";
+})();
+
 let sintese = window.speechSynthesis;
 let reconhecimento = null;
 let usuarioLogado = null;
@@ -384,8 +424,15 @@ async function fazerLogin() {
     form.append("senha", senha);
 
     try {
-        const resp = await fetch(API_URL + "api_login.php", { method: "POST", body: form });
+        const urlLogin = (API_URL || "./") + "api_login.php";
+        const resp = await fetch(urlLogin, { method: "POST", body: form });
         const texto = await resp.text();
+
+        if (!resp.ok) {
+            console.error("Resposta HTTP inválida do login:", resp.status, texto.slice(0, 500));
+            alert("Não foi possível entrar no sistema. Verifique se o projeto está sendo aberto na URL correta do servidor. 💜");
+            return;
+        }
 
         let res = {};
         if (texto) {
